@@ -1,6 +1,7 @@
 import numpy as np
 from pathlib import Path
 from typing import Optional
+from logging import getLogger
 from dataclasses import dataclass
 
 from Bio import SeqIO
@@ -14,14 +15,18 @@ class ChimeraGenerator:
     """
     seq1: np.ndarray
     seq2: np.ndarray
+    valid_nucs: np.ndarray = None
 
-    def __post_init__(self):
-        self.valid_nucs = np.array(["A", "T", "G", "C"])
+    def __post_init__(self, ):
+        self._logger = getLogger(__name__)
 
         if not isinstance(self.seq1, np.ndarray):
             self.seq1 = np.array(list(self.seq1))
         if not isinstance(self.seq2, np.ndarray):
             self.seq2 = np.array(list(self.seq2))
+        
+        if self.valid_nucs is None:
+              self.valid_nucs = np.array(["A", "T", "G", "C"])
 
         self.freqs1 = self._nuc_freqs(self.seq1)
         self.freqs2 = self._nuc_freqs(self.seq2)
@@ -56,6 +61,7 @@ class ChimeraGenerator:
                  output_name: str = "chimera",
                  save_format: str = 'fasta'  # options: 'fasta', 'txt'
                  ) -> tuple[str, str]:
+
         """Generate chimeric DNA sequence and source mask"""
         
         if seed is not None:
@@ -108,29 +114,35 @@ class ChimeraGenerator:
         if format == 'fasta':
             record = SeqRecord(Seq(sequence), id="chimera", description="Chimeric DNA sequence")
             SeqIO.write(record, path / f"{filename}.fasta", "fasta")
+            self._logger.info(f"Chimera sequence saved on path {path / f'{filename}.fasta'}")
+        
         elif format == 'txt':
             with open(path / f"{filename}.txt", "w") as f:
                 f.write(sequence)
+            self._logger.info(f"Chimera sequence saved on path {path / f'{filename}.txt'}")
+            
         else:
             raise ValueError("Unsupported format. Use 'fasta' or 'txt'.")
 
         # Save the mask as plain text
         with open(path / f"{filename}_states.txt", "w") as f:
             f.write(states)
+        self._logger.info(f"Chimera state sequence saved on path {path / f'{filename}_states.txt'}")
+        
 
     def summary(self):
-        """Print statistics on chimeric sequence generation"""
-        print("Original frequencies:")
-        print("  seq1:", self.freqs1)
-        print("  seq2:", self.freqs2)
+        """Log statistics on chimeric sequence generation"""
+        self._logger.info("Original frequencies:")
+        self._logger.info(f"  seq1: {self.freqs1}")
+        self._logger.info(f"  seq2: {self.freqs2}")
 
         if not hasattr(self, "_last_chimera"):
-            print("No chimera generated yet.")
+            self._logger.warning("No chimera generated yet.")
             return
 
         chimera_freqs = self._nuc_freqs(np.array(list(self._last_chimera)))
-        print("\nChimera frequencies:")
-        print(" ", chimera_freqs)
+        self._logger.info("\nChimera frequencies:")
+        self._logger.info(f"  {chimera_freqs}")
 
         frag_lengths = [l for _, l in self._fragments_info]
         src1_total = sum(l for src, l in self._fragments_info if src == 0)
@@ -138,8 +150,8 @@ class ChimeraGenerator:
         total = src1_total + src2_total
         mean_frag_len = np.mean(frag_lengths)
 
-        print("\nFragment source stats:")
-        print(f"  From seq1: {src1_total} nt ({src1_total / total:.2%})")
-        print(f"  From seq2: {src2_total} nt ({src2_total / total:.2%})")
-        print(f"  Mean fragment length: {mean_frag_len:.2f} nt")
-        print(f"  Total fragments: {len(self._fragments_info)}")
+        self._logger.info("\nFragment source stats:")
+        self._logger.info(f"  From seq1: {src1_total} nt ({src1_total / total:.2%})")
+        self._logger.info(f"  From seq2: {src2_total} nt ({src2_total / total:.2%})")
+        self._logger.info(f"  Mean fragment length: {mean_frag_len:.2f} nt")
+        self._logger.info(f"  Total fragments: {len(self._fragments_info)}")

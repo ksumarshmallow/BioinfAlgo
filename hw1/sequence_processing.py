@@ -1,10 +1,14 @@
 import numpy as np
 from Bio import SeqIO
 from pathlib import Path
+from logging import getLogger
 from dataclasses import dataclass
+
 
 @dataclass
 class SequenceProcessor:
+    valid_nucl: list = None
+    
     """
     A class for processing genomic sequences.
     
@@ -14,7 +18,11 @@ class SequenceProcessor:
     """
     
     def __post_init__(self):
-        self.VALID_NUCS = set("ATGC")
+        self._logger = getLogger(__name__)
+
+        if self.valid_nucl is None:
+            self.valid_nucl = ['A', 'T', 'G', 'C']
+        self.VALID_NUCS = set(self.valid_nucl)
 
 
     def load_sequence(self, seq_path: Path) -> str:
@@ -31,7 +39,10 @@ class SequenceProcessor:
         """
         records = list(SeqIO.parse(seq_path, "fasta"))
         if records:
+            self._logger.info(f'{seq_path} parsed as FASTA file')
             return str(records[0].seq)
+
+        self._logger.info(f'{seq_path} is not a FASTA file. Sequence will be parsed as from simple .txt')
         return seq_path.read_text()
 
 
@@ -46,6 +57,7 @@ class SequenceProcessor:
           - Filters out any non-ATGC characters using the clean_sequence method
         """
 
+        self._logger.info('Start process and filter sequence. It should contain only valid nucleotides')
         lines = fasta_data.splitlines()
         seq_lines = [line.strip() for line in lines if not line.startswith(">")]
         return self.clean_sequence("".join(seq_lines).upper())

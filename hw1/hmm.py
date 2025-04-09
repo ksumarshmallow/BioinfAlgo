@@ -1,7 +1,9 @@
 import numpy as np
 from tqdm import tqdm
-from dataclasses import dataclass, field
 from typing import List
+from logging import getLogger
+from tabulate import tabulate
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -15,6 +17,8 @@ class HMM:
     pi: np.ndarray = field(init=False)                  # Начальное распределение состояний
 
     def __post_init__(self):
+        self._logger = getLogger(__name__)
+
         self.state2idx = {state.item(): i for i, state in enumerate(self.states_set)}
         self.obs2idx = {nucl.item(): i for i, nucl in enumerate(self.observations_set)}
         self.idx2state = {i: state.item() for i, state in enumerate(self.states_set)}
@@ -29,6 +33,15 @@ class HMM:
         self.transition_matrix = self._get_transition_matrix()
         self.emission_matrix = self._get_emission_matrix(self.freqs_list)
         self.pi = self._get_stationary_distribution(self.transition_matrix)
+
+        self._log_matrix('Transition matrix', self.transition_matrix, self.states_set, self.states_set)
+        self._log_matrix('Emission matrix', self.emission_matrix, self.states_set, self.observations_set)
+        self._logger.info(f'Stationary distribution: \n{self.pi}')
+    
+    def _log_matrix(self, name: str, matrix: np.ndarray, row_labels: np.ndarray, col_labels: np.ndarray):
+        """Logging matrix as a table"""
+        table = tabulate(matrix, headers=col_labels, showindex=row_labels, tablefmt="grid")
+        self._logger.info(f"{name}:\n{table}")
 
     def _get_transition_matrix(self):
         """Transition matrix distribution based on mean step value"""
