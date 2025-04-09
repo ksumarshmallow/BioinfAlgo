@@ -132,17 +132,14 @@ class ChimeraGenerator:
 
     def summary(self):
         """Log statistics on chimeric sequence generation"""
-        self._logger.info("Original frequencies:")
-        self._logger.info(f"  seq1: {self.freqs1}")
-        self._logger.info(f"  seq2: {self.freqs2}")
+        self._logger.info(f"\nOriginal frequencies: \nseq1: {self.freqs1} \nseq2: {self.freqs2}")
 
         if not hasattr(self, "_last_chimera"):
             self._logger.warning("No chimera generated yet.")
             return
 
         chimera_freqs = self._nuc_freqs(np.array(list(self._last_chimera)))
-        self._logger.info("\nChimera frequencies:")
-        self._logger.info(f"  {chimera_freqs}")
+        self._logger.info("\n\nChimera frequencies: \n{chimera_freqs}")
 
         frag_lengths = [l for _, l in self._fragments_info]
         src1_total = sum(l for src, l in self._fragments_info if src == 0)
@@ -150,8 +147,10 @@ class ChimeraGenerator:
         total = src1_total + src2_total
         mean_frag_len = np.mean(frag_lengths)
 
-        self._logger.info("\nFragment source stats:")
-        self._logger.info(f"  From seq1: {src1_total} nt ({src1_total / total:.2%})")
-        self._logger.info(f"  From seq2: {src2_total} nt ({src2_total / total:.2%})")
-        self._logger.info(f"  Mean fragment length: {mean_frag_len:.2f} nt")
-        self._logger.info(f"  Total fragments: {len(self._fragments_info)}")
+        fragment_text = f"\n\nFragment source stats:"
+        fragment_text += f"\nFrom seq1: {src1_total} nt ({src1_total / total:.2%})"
+        fragment_text += f"\nFrom seq2: {src2_total} nt ({src2_total / total:.2%})"
+        fragment_text += f"\nMean fragment length: {mean_frag_len:.2f} nt"
+        fragment_text += f"\nTotal fragments: {len(self._fragments_info)}"
+
+        self._logger.info(fragment_text)

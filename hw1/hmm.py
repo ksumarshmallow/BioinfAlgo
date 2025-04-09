@@ -36,11 +36,11 @@ class HMM:
 
         self._log_matrix('Transition matrix', self.transition_matrix, self.states_set, self.states_set)
         self._log_matrix('Emission matrix', self.emission_matrix, self.states_set, self.observations_set)
-        self._logger.info(f'Stationary distribution: \n{self.pi}')
-    
+        self._logger.info(f'Stationary distribution: {self.pi}')
+
     def _log_matrix(self, name: str, matrix: np.ndarray, row_labels: np.ndarray, col_labels: np.ndarray):
         """Logging matrix as a table"""
-        table = tabulate(matrix, headers=col_labels, showindex=row_labels, tablefmt="grid")
+        table = tabulate(matrix, headers=col_labels, tablefmt="grid")
         self._logger.info(f"{name}:\n{table}")
 
     def _get_transition_matrix(self):

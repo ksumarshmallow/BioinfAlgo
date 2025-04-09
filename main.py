@@ -2,17 +2,17 @@ import sys
 import logging
 import numpy as np
 
-from sequence_processing import SequenceProcessor
-from chimera_generator import ChimeraGenerator
-from hmm import HMM, viterbi
+from hw1.sequence_processing import SequenceProcessor
+from hw1.chimera_generator import ChimeraGenerator
+from hw1.hmm import HMM, viterbi
 
 from utils.config_parser import ConfigParser
 from utils.cli_argument_parser import HW1ParamsParser
 from utils.logging import setup_logger
 
 def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
-    general_params = config_path["GeneralParams"]
-    chimera_generator_params = config_path["ChimeraGenerator"]
+    general_params = config["GeneralParams"]
+    chimera_generator_params = config["ChimeraGenerator"]
 
     valid_nucleotides = general_params['valid_nucleotides']
     logger.info(f'Valid nucleotides: {valid_nucleotides}')
