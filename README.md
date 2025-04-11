@@ -134,7 +134,10 @@ ChimeraGenerator:
 #### 🚀 Запуск через CLI
 
 ```bash
-python hw1/run_viterbi.py --seq <path_to_sequence> --output <savepath_predicted_states> --config <path_to_config>
+python hw1/run_viterbi.py \
+  --seq data/chimera_seq.fasta \
+  --output results/predicted_states.txt \
+  --config hw1/config_viterbi.yaml
 ```
 
 - `--seq`: путь к последовательности, для которой необходимо предсказать путь состояний.
