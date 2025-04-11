@@ -19,9 +19,8 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     """Main processing pipeline"""
     
     # Configuration setup
-    general_params = config["GeneralParams"]
     chimera_params = config["ChimeraGenerator"]
-    valid_nucleotides = general_params['valid_nucleotides']
+    valid_nucleotides = config['valid_nucleotides']
     
     # Output configuration
     output_folder = Path(chimera_params['output_folder'])

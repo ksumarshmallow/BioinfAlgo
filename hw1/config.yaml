@@ -1,6 +1,4 @@
-GeneralParams:
-  num_sequences: 2
-  valid_nucleotides: ['A', 'T', 'G', 'C']  # order in emission matrix
+valid_nucleotides: ['A', 'T', 'G', 'C']  # order in emission matrix
 
 ChimeraGenerator:
   mean_fragment_length: 300
