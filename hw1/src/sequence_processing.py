@@ -89,6 +89,5 @@ class SequenceProcessor:
         if file_content.lstrip().startswith(">"):
             sequence = self.process_fasta(file_content)
         else:
-            self._logger.info(file_content)
             sequence = self.clean_sequence("".join(file_content.split()))
         return np.array(list(sequence))
