@@ -50,7 +50,7 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     logger.info('Initializing HMM model')
     hmm = HMM(
         states_set=np.array([1, 2]),
-        observations_set=np.array(config["GeneralParams"]['valid_nucleotides']),
+        observations_set=np.array(valid_nucleotides),
         freqs_list=[chimera_gen.freqs1, chimera_gen.freqs2],
         mean_steps=config["ChimeraGenerator"]['mean_fragment_length']
     )
