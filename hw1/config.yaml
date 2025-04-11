@@ -4,7 +4,6 @@ ChimeraGenerator:
   mean_fragment_length: 300
   max_seqlen: 10000
   seed: 42
-  param_folder: 'hw1/params'
   output_folder: 'hw1/results'
   output_name: 'chimera_seq'
   save_format: 'fasta'

@@ -24,16 +24,14 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     
     # Output configuration
     output_folder = Path(chimera_params['output_folder'])
-    param_folder = Path(chimera_params.pop('param_folder'))
 
     output_folder.mkdir(parents=True, exist_ok=True)
-    param_folder.mkdir(parents=True, exist_ok=True)
 
     output_name = chimera_params['output_name']
 
     summary_path = output_folder / "summary.txt"
     viterbi_state_path = output_folder / f"{output_name}_states_viterbi.txt"
-    emission_matrix_path = param_folder / "emission_matrix.npy"
+    emission_matrix_path = output_folder / "emission_matrix.npy"
 
     # Step 1. Process input sequences
     logger.info(f'Processing sequences: {seq1_path} and {seq2_path}')

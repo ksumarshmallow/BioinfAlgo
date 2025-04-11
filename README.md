@@ -89,8 +89,7 @@ ChimeraGenerator:
   mean_fragment_length: 300     # Средняя длина фрагмента (нуклеотидов)
   max_seqlen: 10000             # Длина итоговой химерной последовательности
   seed: 42                      # Seed для воспроизводимости
-  param_folder: 'hw1/params'    # Папка для сохранения матрицы эмиссий HMM
-  output_folder: 'data'         # Папка для сохранения результатов
+  output_folder: 'hw1/results'  # Папка для сохранения результатов
   output_name: 'chimera_seq'    # Базовое имя файлов вывода
   save_format: 'fasta'          # Формат сохранения химерной последовательности (.fasta или .txt)
 ```
@@ -135,12 +134,12 @@ ChimeraGenerator:
 
 ```bash
 python hw1/run_viterbi.py \
-  --seq data/chimera_seq.fasta \
-  --output results/predicted_states.txt \
+  --seq hw1/test/test_seq \
+  --output hw1/results/predicted_states.txt \
   --config hw1/config_viterbi.yaml
 ```
 
-- `--seq`: путь к последовательности, для которой необходимо предсказать путь состояний.
+- `--seq`: путь к последовательности, для которой необходимо предсказать путь состояний (**УКАЖИТЕ СВОЙ ПУТЬ**).
 - `--output`: путь для сохранения предсказанного пути (текстовый файл).
 - `--config`: путь к конфигурационному файлу (уже есть в папке проекта по указанному в команде пути; при необходимости можете изменить параметры).
 
@@ -152,7 +151,7 @@ valid_nucleotides: ['A', 'T', 'G', 'C']
 # Среднее число шагов в каждом из состояний
 mean_steps: 300
 # Эмиссионная матрица
-emission_matrix_path: 'hw1/params/emission_matrix.npy'
+emission_matrix_path: 'hw1/test/emission_matrix.npy'
 ```
 
   - `emission_matrix_path` указывает путь к сохраненной ранее эмиссионной матрице. Либо можно задать в файле собственную матрицу (например, с помощью блокнота **`hw1/make_emission.ipynb`**). 
