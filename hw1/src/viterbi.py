@@ -9,6 +9,9 @@ sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 import logging
 from utils.logging import setup_logger
 
+def list2np(list_):
+    return np.array(list_)
+
 def viterbi(states_set: np.ndarray,
             transition_matrix: np.ndarray,
             emission_matrix: np.ndarray,
