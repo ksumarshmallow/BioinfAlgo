@@ -1,9 +1,12 @@
+import pickle
 import numpy as np
-from tqdm import tqdm
-from typing import List
-from logging import getLogger
+from typing import List, Dict, Any
+from pathlib import Path
 from tabulate import tabulate
 from dataclasses import dataclass, field
+
+import logging
+from utils.logging import setup_logger
 
 
 @dataclass
@@ -17,7 +20,7 @@ class HMM:
     pi: np.ndarray = field(init=False)                  # Начальное распределение состояний
 
     def __post_init__(self):
-        self._logger = getLogger(__name__)
+        self._logger = setup_logger(__name__, level=logging.INFO)
 
         self.state2idx = {state.item(): i for i, state in enumerate(self.states_set)}
         self.obs2idx = {nucl.item(): i for i, nucl in enumerate(self.observations_set)}
@@ -62,7 +65,6 @@ class HMM:
         for idx, freqs in enumerate(freqs_list):
             gc_proba, at_proba = self._get_emission_proba(freqs)
 
-            # Заполнение матрицы для каждого состояния
             emission_matrix[idx, self.obs2idx['G']] = gc_proba
             emission_matrix[idx, self.obs2idx['C']] = gc_proba
             emission_matrix[idx, self.obs2idx['A']] = at_proba
@@ -76,61 +78,29 @@ class HMM:
         pi /= pi.sum()
         return pi
 
+class HMMSerializer:
+    @staticmethod
+    def save(hmm: HMM, path: Path):
+        """Save HMM parameters to file"""
+        params = {
+            'states_set': hmm.states_set,
+            'observations_set': hmm.observations_set,
+            'transition_matrix': hmm.transition_matrix,
+            'emission_matrix': hmm.emission_matrix,
+            'pi': hmm.pi,
+            'mappings': {
+                'obs2idx': hmm.obs2idx,
+                'idx2obs': hmm.idx2obs,
+                'state2idx': hmm.state2idx,
+                'idx2state': hmm.idx2state
+            }
+        }
+        with open(path, 'wb') as f:
+            pickle.dump(params, f)
 
-def viterbi(states_set: np.ndarray,
-            transition_matrix: np.ndarray,
-            emission_matrix: np.ndarray,
-            pi: np.ndarray,
-            observations: np.ndarray):
-    """
-    Implements the Viterbi algorithm to find the most probable hidden state sequence 
-    given a sequence of observations.
+    @staticmethod
+    def load(path: Path) -> Dict[str, Any]:
+        """Load HMM parameters from file"""
+        with open(path, 'rb') as f:
+            return pickle.load(f)
 
-    Parameters:
-        states_set:         Array of state indices (0, 1, ..., num_states-1)
-        transition_matrix:  [num_states x num_states] matrix, where entry (i, j) is the probability
-                            of transitioning from state i to state j
-        emission_matrix:    [num_states x num_symbols] matrix, where entry (i, k) is the probability
-                            of emitting observation k from state i
-        pi:                 Initial state distribution summing to 1, [num_states, ]
-        observations:       Sequence of observed symbols (indices from `symbols_set`)
-
-    Returns:
-        np.ndarray: Most probable sequence of hidden states
-    """
-
-    L = len(observations)
-    num_states = len(states_set)
-
-    # Viterbi table (log probabilities to avoid underflow)
-    viterbi_log = np.full((L, num_states), -np.inf)      # Stores log probas of being in state s at time t
-    backpointer = np.zeros((L, num_states), dtype=int)   # Stores state k from which we arrived to s
-
-    # 1. Initialization: v_k(1) = π_k * e_k(ε_1)
-    viterbi_log[0] = np.log(pi) + np.log(emission_matrix[:, observations[0]])
-
-    # 2. Recursion step:  v_k(t) = e_k(ε_{t}) * max_l [ v_l(t-1) * m_{lk} ]
-    for t in tqdm(range(1, L), colour='GREEN', desc='Recursion...'):
-        log_probs = viterbi_log[t-1] + np.log(transition_matrix) + np.log(emission_matrix[:, observations[t]])
-
-        # Store the most probable previous state
-        backpointer[t] = np.argmax(log_probs, axis=1)
-
-        # Store the best log-probability of this prev state
-        viterbi_log[t] = np.max(log_probs, axis=1)
-
-    # 3. Backtracking
-    best_path = np.zeros(L, dtype=int)
-
-    # Most probable last state
-    best_path[-1] = np.argmax(viterbi_log[-1])
-
-    # For each step we know, from which state we arrived here (most probable)
-    for t in range(L-2, -1, -1):
-        best_path[t] = backpointer[t+1, best_path[t+1]]
-
-    return best_path
-
-
-def evaluate(seq_gt: np.ndarray, seq_pred: np.ndarray):
-    return (seq_gt != seq_pred).mean()

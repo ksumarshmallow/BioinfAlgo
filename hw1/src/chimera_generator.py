@@ -1,12 +1,14 @@
 import numpy as np
 from pathlib import Path
 from typing import Optional
-from logging import getLogger
 from dataclasses import dataclass
 
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
+
+import logging
+from utils.logging import setup_logger
 
 @dataclass
 class ChimeraGenerator:
@@ -18,7 +20,7 @@ class ChimeraGenerator:
     valid_nucs: np.ndarray = None
 
     def __post_init__(self, ):
-        self._logger = getLogger(__name__)
+        self._logger = setup_logger(__name__, level=logging.INFO)
 
         if not isinstance(self.seq1, np.ndarray):
             self.seq1 = np.array(list(self.seq1))
@@ -109,7 +111,7 @@ class ChimeraGenerator:
         """Save the generated chimera sequence and states"""
         
         path = Path(path)
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path.mkdir(parents=True, exist_ok=True)
 
         if format == 'fasta':
             record = SeqRecord(Seq(sequence), id="chimera", description="Chimeric DNA sequence")
@@ -130,27 +132,56 @@ class ChimeraGenerator:
         self._logger.info(f"Chimera state sequence saved on path {path / f'{filename}_states.txt'}")
         
 
-    def summary(self):
-        """Log statistics on chimeric sequence generation"""
-        self._logger.info(f"\nOriginal frequencies: \nseq1: {self.freqs1} \nseq2: {self.freqs2}")
+    def summary(self, output_folder: Optional[str] = None, filename: str = "summary.txt"):
+        """Log and optionally save statistics on chimeric sequence generation"""
+        
+        # Prepare summary content
+        summary_lines = [
+            "Chimeric Sequence Generation Summary",
+            "===================================",
+            "",
+            f"Original frequencies:",
+            f"seq1: {self.freqs1}",
+            f"seq2: {self.freqs2}",
+            ""
+        ]
 
         if not hasattr(self, "_last_chimera"):
-            self._logger.warning("No chimera generated yet.")
-            return
+            warning_msg = "No chimera generated yet."
+            self._logger.warning(warning_msg)
+            summary_lines.append(warning_msg)
+        else:
+            chimera_freqs = self._nuc_freqs(np.array(list(self._last_chimera)))
+            summary_lines.extend([
+                f"Chimera frequencies:",
+                f"{chimera_freqs}",
+                ""
+            ])
 
-        chimera_freqs = self._nuc_freqs(np.array(list(self._last_chimera)))
-        self._logger.info("\n\nChimera frequencies: \n{chimera_freqs}")
+            frag_lengths = [l for _, l in self._fragments_info]
+            src1_total = sum(l for src, l in self._fragments_info if src == 0)
+            src2_total = sum(l for src, l in self._fragments_info if src == 1)
+            total = src1_total + src2_total
+            mean_frag_len = np.mean(frag_lengths)
 
-        frag_lengths = [l for _, l in self._fragments_info]
-        src1_total = sum(l for src, l in self._fragments_info if src == 0)
-        src2_total = sum(l for src, l in self._fragments_info if src == 1)
-        total = src1_total + src2_total
-        mean_frag_len = np.mean(frag_lengths)
+            summary_lines.extend([
+                "Fragment source stats:",
+                f"From seq1: {src1_total} nt ({src1_total / total:.2%})",
+                f"From seq2: {src2_total} nt ({src2_total / total:.2%})",
+                f"Mean fragment length: {mean_frag_len:.2f} nt",
+                f"Total fragments: {len(self._fragments_info)}"
+            ])
 
-        fragment_text = f"\n\nFragment source stats:"
-        fragment_text += f"\nFrom seq1: {src1_total} nt ({src1_total / total:.2%})"
-        fragment_text += f"\nFrom seq2: {src2_total} nt ({src2_total / total:.2%})"
-        fragment_text += f"\nMean fragment length: {mean_frag_len:.2f} nt"
-        fragment_text += f"\nTotal fragments: {len(self._fragments_info)}"
+        # Join lines for logging
+        summary_text = "\n".join(summary_lines)
+        self._logger.info(summary_text)
 
-        self._logger.info(fragment_text)
+        # Save to file if output_folder is provided
+        if output_folder:
+            path = Path(output_folder)
+            path.mkdir(parents=True, exist_ok=True)
+            
+            summary_file = path / filename
+            with open(summary_file, "w") as f:
+                f.write(summary_text)
+            self._logger.info(f"Summary saved to {summary_file}")

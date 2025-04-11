@@ -1,9 +1,10 @@
 import numpy as np
 from Bio import SeqIO
 from pathlib import Path
-from logging import getLogger
 from dataclasses import dataclass
 
+import logging
+from utils.logging import setup_logger
 
 @dataclass
 class SequenceProcessor:
@@ -18,7 +19,7 @@ class SequenceProcessor:
     """
     
     def __post_init__(self):
-        self._logger = getLogger(__name__)
+        self._logger = setup_logger(__name__, level=logging.INFO)
 
         if self.valid_nucl is None:
             self.valid_nucl = ['A', 'T', 'G', 'C']
