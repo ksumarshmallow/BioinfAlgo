@@ -62,6 +62,8 @@ def main(
     
     best_path_decoded = [idx2state[idx] for idx in best_path]
     
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
     if output_path:
         with open(output_path, 'w') as f:
             f.write(''.join(map(str, best_path_decoded)))
