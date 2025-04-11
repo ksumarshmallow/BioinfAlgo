@@ -1,4 +1,4 @@
-# BioinnfAlgo
+# BioinfAlgo
 
 ## HW1
 ```markdown
