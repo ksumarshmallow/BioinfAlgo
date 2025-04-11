@@ -7,7 +7,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from src.sequence_processing import SequenceProcessor
 from src.chimera_generator import ChimeraGenerator
-from src.hmm import HMM, HMMSerializer
+from src.hmm import HMM
 from src.viterbi import viterbi, evaluate, bootstrap_viterbi, write_statistics_summary
 
 from utils.config_parser import ConfigParser
@@ -25,10 +25,16 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     
     # Output configuration
     output_folder = Path(chimera_params['output_folder'])
+    param_folder = Path(chimera_params.pop('param_folder'))
+
+    output_folder.mkdir(parents=True, exist_ok=True)
+    param_folder.mkdir(parents=True, exist_ok=True)
+
     output_name = chimera_params['output_name']
-    summary_file = output_folder / "summary.txt"
-    hmm_save_path = output_folder / "hmm_params.pkl"
+
+    summary_path = output_folder / "summary.txt"
     viterbi_state_path = output_folder / f"{output_name}_states_viterbi.txt"
+    emission_matrix_path = param_folder / "emission_matrix.npy"
 
     # Step 1. Process input sequences
     logger.info(f'Processing sequences: {seq1_path} and {seq2_path}')
@@ -39,7 +45,7 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     logger.info('Start generating Chimera sequence')
     chimera_gen = ChimeraGenerator(seq1, seq2, np.array(valid_nucleotides))
     chimera_seq, chimera_states = chimera_gen.generate(**chimera_params)
-    chimera_gen.summary(output_folder=output_folder, filename=summary_file.name)
+    chimera_gen.summary(output_folder=output_folder, filename=summary_path.name)
 
     # Step 3. HMM initialization and processing
     logger.info('Initializing HMM model')
@@ -49,23 +55,30 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
         freqs_list=[chimera_gen.freqs1, chimera_gen.freqs2],
         mean_steps=config["ChimeraGenerator"]['mean_fragment_length']
     )
-    HMMSerializer.save(hmm, hmm_save_path)
-    logger.info(f"HMM parameters saved to {hmm_save_path}")
 
-    hmm_params = HMMSerializer.load(hmm_save_path)
-    with open(summary_file, 'a') as f:
+    hmm_params = {
+        "states_set": hmm.states_set,
+        "transition_matrix": hmm.transition_matrix,
+        "emission_matrix": hmm.emission_matrix,
+        "pi": hmm.pi
+    }
+
+    with open(summary_path, 'a') as f:
         f.write("\n\n=======================\n")
         f.write("HMM Parameters:\n")
         f.write("=======================\n")
 
         for k, v in hmm_params.items():
             f.write(f"{k}:\n{v}\n\n")
+    
+    np.save(emission_matrix_path, hmm.emission_matrix)
+    logger.info(f"Emission matrix saved in path: {emission_matrix_path}")
 
     # Step 4. Viterbi analysis
     logger.info('Running Viterbi algorithm')
     chimera_coded = np.array([hmm.obs2idx[nucl] for nucl in chimera_seq])
     best_path = viterbi(observations=chimera_coded, **hmm_params)
-    best_path_decoded = np.array([hmm_params['mappings']['idx2state'][i.item()] for i in best_path])
+    best_path_decoded = np.array([hmm.idx2state[i.item()] for i in best_path])
 
     with open(viterbi_state_path, 'w') as f:
         f.write("".join(best_path_decoded.astype(str)))
@@ -99,7 +112,7 @@ def main(seq1_path: str, seq2_path: str, config: dict, logger: logging.Logger):
     )
 
     # Save statistics
-    write_statistics_summary(summary_file, {'1': stats_seq1, '2': stats_seq2}, error_rate)
+    write_statistics_summary(summary_path, {'1': stats_seq1, '2': stats_seq2}, error_rate)
 
 if __name__ == "__main__":
     logger = setup_logger(__name__, level=logging.INFO)

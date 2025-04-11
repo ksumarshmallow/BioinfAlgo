@@ -3,6 +3,9 @@ from tqdm import tqdm
 from typing import Tuple
 from pathlib import Path
 
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
+
 import logging
 from utils.logging import setup_logger
 

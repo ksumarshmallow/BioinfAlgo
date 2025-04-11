@@ -1,0 +1,4 @@
+valid_nucleotides: ['A', 'T', 'G', 'C']  # order in emission matrix
+mean_steps: 300
+seed: 42
+emission_matrix_path: 'hw1/params/emission_matrix.npy'

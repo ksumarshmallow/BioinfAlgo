@@ -5,9 +5,10 @@ from pathlib import Path
 from tabulate import tabulate
 from dataclasses import dataclass, field
 
+import sys
+sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
 import logging
 from utils.logging import setup_logger
-
 
 @dataclass
 class HMM:
@@ -48,7 +49,7 @@ class HMM:
 
     def _get_transition_matrix(self):
         """Transition matrix distribution based on mean step value"""
-        lambda_ = 1 / self.mean_steps  # eponentioal distribution
+        lambda_ = 1 / self.mean_steps  # exponential distribution
         return np.array([[1 - lambda_, lambda_], [lambda_, 1 - lambda_]])
 
     def _get_emission_proba(self, freqs):
@@ -77,30 +78,3 @@ class HMM:
         pi = np.real(eig_vectors[:, np.argmax(np.isclose(eig_values, 1))])
         pi /= pi.sum()
         return pi
-
-class HMMSerializer:
-    @staticmethod
-    def save(hmm: HMM, path: Path):
-        """Save HMM parameters to file"""
-        params = {
-            'states_set': hmm.states_set,
-            'observations_set': hmm.observations_set,
-            'transition_matrix': hmm.transition_matrix,
-            'emission_matrix': hmm.emission_matrix,
-            'pi': hmm.pi,
-            'mappings': {
-                'obs2idx': hmm.obs2idx,
-                'idx2obs': hmm.idx2obs,
-                'state2idx': hmm.state2idx,
-                'idx2state': hmm.idx2state
-            }
-        }
-        with open(path, 'wb') as f:
-            pickle.dump(params, f)
-
-    @staticmethod
-    def load(path: Path) -> Dict[str, Any]:
-        """Load HMM parameters from file"""
-        with open(path, 'rb') as f:
-            return pickle.load(f)
-

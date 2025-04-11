@@ -44,7 +44,9 @@ class SequenceProcessor:
             return str(records[0].seq)
 
         self._logger.info(f'{seq_path} is not a FASTA file. Sequence will be parsed as from simple .txt')
-        return seq_path.read_text()
+        with open(seq_path, 'r') as f:
+            seq = f.readlines()
+        return "".join(seq)
 
 
     def process_fasta(self, fasta_data: str) -> str:
@@ -68,7 +70,7 @@ class SequenceProcessor:
         """
         Filters the sequence, returning a new string containing only the valid nucleotides (A, T, G, C)
         """
-        return "".join(nuc for nuc in seq if nuc in self.VALID_NUCS)
+        return "".join(nuc for nuc in seq.upper() if nuc in self.VALID_NUCS)
 
 
     def process(self, sequence_path: str = None) -> np.ndarray:
@@ -87,5 +89,6 @@ class SequenceProcessor:
         if file_content.lstrip().startswith(">"):
             sequence = self.process_fasta(file_content)
         else:
+            self._logger.info(file_content)
             sequence = self.clean_sequence("".join(file_content.split()))
         return np.array(list(sequence))
